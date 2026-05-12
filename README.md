@@ -153,13 +153,14 @@ Pair-rep PCA 10D **consistently beats ESM2 LLR baseline on all 8 proteins**
 (all effect sizes > 0). PTEN_HUMAN shows the largest gain — pair-rep
 "rescues" a protein where ESM-2 alone has essentially no predictive signal.
 
-### Example: KKA2_KLEPN main figure
+### Example: HSP82_YEAST main figure
 
-![KKA2 4-panel](results/v9_KKA2_KLEPN/gpr_validation_KKA2_KLEPN.png)
+![HSP82 4-panel](results/v9_HSP82_YEAST/gpr_validation_HSP82_YEAST.png)
 
-Pair-rep PCA 10D reaches Spearman ρ = 0.713 at n=800 (vs ESM2 LLR direct = 0.661),
-with 10/10 seeds beating the ESM2 LLR direct baseline. Best-seed scatter shows
-predictions tightly tracking the y=x line.
+GPR(ESM2 LLR + z_pair PCA 10D) reaches Spearman ρ = 0.634 at n=800 (vs ESM2 LLR
+direct = 0.586), with 9/10 seeds beating the ESM2 LLR direct baseline. Effect
+size +1.24σ — matches the original v9 BLAT reference (+1.26σ) almost exactly,
+demonstrating the pipeline reproduces v9-quality results on a new protein.
 
 ### Reference: BLAT_ECOLX (original v9 protocol)
 
