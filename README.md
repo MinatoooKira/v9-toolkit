@@ -1,32 +1,39 @@
 # v9-toolkit
 
-A reproducible pipeline for predicting protein DMS scores using
-ESM-2 LLR + Protenix Pairformer pair representation + Gaussian Process Regression.
-Strategy follows the v9 protocol validated on BLAT_ECOLX and 8 additional
-ProteinGym proteins.
+A reproducible pipeline that combines ESM-2 sequence likelihoods, Protenix
+Pairformer pair-representations, and Gaussian-Process regression. Used in
+two ways:
+
+- **DMS evaluation** — benchmark protein-fitness predictors with a
+  4-model × 10-seed × 4-sample-size ablation grid.
+- **Wet-lab scorer** — fit a single GPR ensemble on your measured mutations,
+  save a self-contained `scorer.pkl`, and predict μ ± σ for new mutants on
+  demand from a string like `"K53D"`.
+
+The v9 protocol was validated on BLAT_ECOLX and 8 additional ProteinGym
+proteins.
 
 ## Quick view of the strategy
 
 ```
-  DMS CSV  ──►  Step 1 (esm_llr)
-                ESM-2 forward pass → per-position log-probs → ESM2 LLR per mutation
+  DMS CSV  ──►  Step 1 (esm_llr)              ESM-2 forward pass → per-position log-probs → LLR
+                Step 2 (pair_rep)             Protenix Pairformer per mutated sequence
+                                              s: (N, 384) | z: (N, N, 128) → 1920D / mutation
                                                 │
-                                                ▼
-                                          features.pkl
+                                       features.pkl + pair_rep_matrix.npy
                                                 │
-                Step 2 (pair_rep)               ▼
-                Protenix Pairformer per mutated sequence
-                  s: (N, 384) | z: (N, N, 128) → 1920D vec per mutation
-                                                │
-                                                ▼
-                                      pair_rep_matrix.npy
-                                                │
-                Step 3 (gpr)                    ▼
-                Active-site WINDOW=10 filter → PCA(z_pair → 10D) → 11D
-                4 ablation GPR models × 10 seeds × 4 sample sizes
-                                                │
-                                                ▼
-                              raw_results.csv  +  summary.json  +  figures/
+                          ┌─────────────────────┴─────────────────────┐
+                          ▼                                           ▼
+              Mode A (validate)                           Mode B (train + score)
+              Active-site filter → PCA                    Active-site filter → PCA →
+              4 models × 10 seeds × 4 sizes               fit 10-GPR ensemble on ALL data
+                          │                                           │
+                          ▼                                           ▼
+              raw_results.csv  +  figures/                       scorer.pkl
+                                                                      │
+                                                                      ▼
+                                                      new mutant string ──► live ESM-2 + Protenix
+                                                                            ──► μ ± σ_total
 ```
 
 ## The 4 models compared
@@ -42,6 +49,10 @@ All use Matérn(ν=2.5) + WhiteKernel, isotropic length-scale, 3 restarts.
 
 z_pair = z_fwd ⊕ z_rev, the cross-attention pair vectors from the mutation
 position to / from the 6 functional-site residues (768 + 768 = 1536D).
+
+Mode A trains and compares all four (ablation). **Mode B uses only the ⭐
+v9-strict variant** — one `GPR(ESM2 LLR + z_pair PCA 10D)` configuration, fit
+as a 10-seed ensemble on your full training set.
 
 ## Install
 
@@ -79,9 +90,19 @@ v9 extract  --config examples/PTEN_HUMAN.yaml   # Protenix Pairformer (hours, GP
 v9 validate --config examples/PTEN_HUMAN.yaml   # GPR + figures (~2 min CPU)
 ```
 
-Or all-in-one:
+Or all-in-one (Mode A):
 ```bash
 v9 run --config examples/PTEN_HUMAN.yaml
+```
+
+Or **deploy as a wet-lab scorer** (Mode B):
+```bash
+v9 prep    --config my_experiment.yaml
+v9 extract --config my_experiment.yaml
+v9 train   --config my_experiment.yaml --hold-out      # → scorer.pkl
+echo -e "mutant\nK53D\nY178A" > new.csv
+v9 score   --config my_experiment.yaml --model output/MY_EXP/scorer.pkl \
+           --input new.csv --output scored.csv         # → μ ± σ per mutant
 ```
 
 On a SLURM cluster:
@@ -99,30 +120,18 @@ shown in `results/`.
 ### Mode B — Real-experiment train & score (deploy as a tool)
 
 For wet-lab workflows: fit one GPR on your measured mutations, save it, then
-score new mutations on demand.
-
-```bash
-# 1. Prep + extract pair-rep for your training mutations (one-time)
-v9 prep    --config examples/my_experiment.yaml
-v9 extract --config examples/my_experiment.yaml
-
-# 2. Train: fit GPR(ESM2 LLR + z_pair PCA 10D) on ALL your data, save scorer.pkl
-v9 train   --config examples/my_experiment.yaml --hold-out
-
-# 3. Score new mutations later (any time, repeatable)
-echo "mutant" > new_mutants.csv
-echo "K53D"  >> new_mutants.csv
-echo "Y178A" >> new_mutants.csv
-v9 score --model output/MY_ENZYME/scorer.pkl \
-         --input new_mutants.csv \
-         --output scored.csv \
-         --config examples/my_experiment.yaml
-```
+score new mutations on demand. See the [Mode B Quick start](#quick-start)
+above for the command sequence.
 
 The `scorer.pkl` is fully self-contained — it bundles the WT sequence, active
 sites, PCA + scaler state, and an **ensemble of 10 GPRs** (different
 `random_state` seeds, same data). Loading it later only requires GPU access
 for ESM-2 / Protenix to featurize the *new* mutations.
+
+`v9 score` runs the full ESM-2 + Protenix featurization on each new mutation
+live — you only supply mutant strings (no pre-extracted pair-rep needed).
+On a single GPU, expect ~1 min model load + 1–3 s per mutation. Verified
+end-to-end on RTX 4090 / 5090.
 
 Scoring averages all 10 ensemble members and reports **total uncertainty**:
 `σ_total = √(aleatoric² + epistemic²)` where aleatoric = mean per-GPR posterior
@@ -155,10 +164,13 @@ For active learning, rank by σ (or by an acquisition function like
 
 Programmatic API:
 ```python
+from v9pipeline.protenix_loader import ProtenixPipeline
 from v9pipeline.score import Scorer
-s = Scorer.load("output/MY_ENZYME/scorer.pkl")
-mean, std = s.score_one("K53D", protenix_pipeline)
-df = s.score_many(["K53D", "Y178A", "R200K"], protenix_pipeline)
+
+pipe = ProtenixPipeline()                          # one-time model load (~30s)
+s    = Scorer.load("output/MY_ENZYME/scorer.pkl")
+mean, std = s.score_one("K53D", pipe)
+df         = s.score_many(["K53D", "Y178A", "R200K"], pipe)
 ```
 
 ## Standardized I/O
@@ -182,12 +194,14 @@ truncate_seq_to: null         # for multi-domain proteins where DMS covers a sub
 **Output** (under `output_dir`):
 ```
 output/PTEN_HUMAN/
-├── features.pkl              # ESM2 LLR + DMS + sequences
-├── meta.pkl                  # summary metadata
-├── pair_rep_matrix.npy       # (N, 1920) Protenix pair-rep features
-├── pair_rep_names.pkl        # aligned mutant names
-├── raw_results.csv           # 160 rows = 4 models × 10 seeds × 4 sample sizes
-├── summary.json              # key metrics
+├── features.pkl              # ESM2 LLR + DMS + sequences         [shared]
+├── meta.pkl                  # summary metadata                   [shared]
+├── pair_rep_matrix.npy       # (N, 1920) Protenix pair-rep        [shared]
+├── pair_rep_names.pkl        # aligned mutant names               [shared]
+├── raw_results.csv           # 160 rows = 4 × 10 × 4              [Mode A]
+├── summary.json              # key metrics                        [Mode A]
+├── scorer.pkl                # self-contained 10-GPR ensemble     [Mode B]
+├── scorer_summary.json       # training metrics + held-out ρ      [Mode B]
 └── figures/
     ├── gpr_validation_PTEN_HUMAN.png   # 4-panel main
     └── gpr_std_PTEN_HUMAN.png          # 3-panel variance/quality
@@ -203,6 +217,11 @@ WINDOW=10 was set by the original v9 BLAT protocol; configurable per protein
 via the `window` field.
 
 ## Validation results
+
+The numbers below are from **Mode A** (ablation grid). They quantify how
+much pair-rep beats LLR alone, justifying Mode B's choice to fix the
+v9-strict model. For your own data, `v9 train --hold-out` reports the
+matching held-out Spearman on your training set.
 
 Pipeline was validated on **8 ProteinGym proteins** + reproduced on
 **BLAT_ECOLX** (the original v9 reference). All raw results, CSVs, and
