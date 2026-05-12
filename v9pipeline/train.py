@@ -30,16 +30,24 @@ from .config import PipelineConfig
 warnings.filterwarnings("ignore")
 
 
-def train(cfg: PipelineConfig, hold_out_validation: bool = False) -> dict:
-    """Fit GPR(ESM2 LLR + z_pair PCA 10D) on training data, save scorer.pkl.
+def train(cfg: PipelineConfig, hold_out_validation: bool = False,
+          n_seeds: int = 10) -> dict:
+    """Fit an ENSEMBLE of GPR(ESM2 LLR + z_pair PCA 10D) on training data.
+
+    Trains `n_seeds` (default 10) GPR models on the SAME data with different
+    `random_state` values, then saves all of them inside scorer.pkl. Scoring
+    averages predictions across the ensemble and combines uncertainty
+    (epistemic from seed variance + aleatoric from each GPR's posterior std).
 
     Args:
         cfg: PipelineConfig pointing at training DMS-style CSV. Requires
              features.pkl and pair_rep_matrix.npy already produced by
              `v9 prep` + `v9 extract`.
         hold_out_validation: if True, hold out 20% of (active-site-filtered)
-             training data and report Spearman ρ on it before fitting the
-             final model on the full set.
+             training data and report Spearman ρ on it (ensemble average)
+             before fitting the final ensemble on the full set.
+        n_seeds: number of GPR members in the ensemble (default 10, matching
+             the DMS evaluation protocol).
 
     Returns:
         summary dict with key training metrics.
@@ -90,7 +98,7 @@ def train(cfg: PipelineConfig, hold_out_validation: bool = False) -> dict:
 
     X = np.hstack([X_llr, pca_zonly.transform(z_pair_raw)])  # (N, 11)
 
-    # Optional held-out validation (20% test)
+    # Optional held-out validation (20% test, ensemble averaged)
     val_score = None
     if hold_out_validation and N >= 50:
         rng = np.random.default_rng(0)
@@ -99,24 +107,32 @@ def train(cfg: PipelineConfig, hold_out_validation: bool = False) -> dict:
         tr, te = idx[:n_tr], idx[n_tr:]
         sc_v = StandardScaler()
         Xtr_v = sc_v.fit_transform(X[tr]); Xte_v = sc_v.transform(X[te])
-        gpr_v = GaussianProcessRegressor(
-            kernel=Matern(nu=2.5) + WhiteKernel(),
-            n_restarts_optimizer=3, random_state=0, normalize_y=True)
-        gpr_v.fit(Xtr_v, y[tr])
-        val_pred = gpr_v.predict(Xte_v)
+        val_preds = []
+        for seed in range(n_seeds):
+            gpr_v = GaussianProcessRegressor(
+                kernel=Matern(nu=2.5) + WhiteKernel(),
+                n_restarts_optimizer=3, random_state=seed, normalize_y=True)
+            gpr_v.fit(Xtr_v, y[tr])
+            val_preds.append(gpr_v.predict(Xte_v))
+        val_pred = np.mean(val_preds, axis=0)
         val_score, _ = spearmanr(y[te], val_pred)
-        print(f"Held-out validation Spearman ρ = {val_score:.4f} (on {len(te)} mutations)")
+        print(f"Held-out validation Spearman ρ (ensemble of {n_seeds}) = {val_score:.4f} "
+              f"(on {len(te)} mutations)")
 
-    # Final fit on ALL training data
+    # Final fit: ENSEMBLE of n_seeds GPRs on ALL training data
     scaler = StandardScaler().fit(X)
     Xs = scaler.transform(X)
-    gpr = GaussianProcessRegressor(
-        kernel=Matern(nu=2.5) + WhiteKernel(),
-        n_restarts_optimizer=3, random_state=0, normalize_y=True)
-    gpr.fit(Xs, y)
-    train_pred = gpr.predict(Xs)
-    train_score, _ = spearmanr(y, train_pred)
-    print(f"Training Spearman ρ (in-sample) = {train_score:.4f}")
+    gprs = []
+    print(f"Fitting ensemble of {n_seeds} GPRs (random_state=0..{n_seeds-1}) ...")
+    for seed in range(n_seeds):
+        gpr = GaussianProcessRegressor(
+            kernel=Matern(nu=2.5) + WhiteKernel(),
+            n_restarts_optimizer=3, random_state=seed, normalize_y=True)
+        gpr.fit(Xs, y)
+        gprs.append(gpr)
+    train_preds = np.mean([g.predict(Xs) for g in gprs], axis=0)
+    train_score, _ = spearmanr(y, train_preds)
+    print(f"Training Spearman ρ (ensemble, in-sample) = {train_score:.4f}")
 
     artifact = {
         "version": "v9-toolkit-0.1.0",
@@ -128,9 +144,11 @@ def train(cfg: PipelineConfig, hold_out_validation: bool = False) -> dict:
         "esm_layer": cfg.esm_layer,
         "pca_zonly": pca_zonly,
         "scaler": scaler,
-        "gpr": gpr,
+        "gprs": gprs,                # list of n_seeds GPR ensemble members
+        "n_seeds": n_seeds,
         "training": {
             "n_train": int(N),
+            "n_seeds_in_ensemble": n_seeds,
             "y_min": float(y.min()),
             "y_max": float(y.max()),
             "y_mean": float(y.mean()),

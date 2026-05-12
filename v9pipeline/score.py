@@ -39,7 +39,9 @@ class Scorer:
         self.esm_layer = artifact["esm_layer"]
         self.pca_zonly = artifact["pca_zonly"]
         self.scaler = artifact["scaler"]
-        self.gpr = artifact["gpr"]
+        # Ensemble: list of GPRs (new format) or single GPR (legacy fallback)
+        self.gprs = artifact.get("gprs") or [artifact["gpr"]]
+        self.n_seeds = len(self.gprs)
         self.training = artifact.get("training", {})
         self._esm = None         # lazy-load
         self._alphabet = None
@@ -112,23 +114,50 @@ class Scorer:
             X[i, 1:] = z_pca
         return X
 
+    def _ensemble_predict(self, Xs: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Aggregate predictions across the GPR ensemble.
+
+        Returns (mean, total_std). The total_std combines:
+          - aleatoric (each GPR's posterior σ averaged): √mean(σ_i²)
+          - epistemic (variance across ensemble means):  var(μ_i)
+        Total variance = aleatoric_var + epistemic_var → std = √total.
+        """
+        all_mu = np.empty((len(self.gprs), len(Xs)))
+        all_var = np.empty((len(self.gprs), len(Xs)))
+        for i, g in enumerate(self.gprs):
+            mu_i, std_i = g.predict(Xs, return_std=True)
+            all_mu[i] = mu_i
+            all_var[i] = std_i ** 2
+        mean = all_mu.mean(axis=0)
+        aleatoric_var = all_var.mean(axis=0)
+        epistemic_var = all_mu.var(axis=0)
+        total_std = np.sqrt(aleatoric_var + epistemic_var)
+        return mean, total_std
+
     def score_one(self, mutant: str, protenix_pipeline) -> Tuple[float, float]:
-        """Return (predicted score, std) for one mutation."""
+        """Return (predicted mean, total std) for one mutation (ensemble)."""
         X = self._featurize([mutant], protenix_pipeline)
         Xs = self.scaler.transform(X)
-        mu, std = self.gpr.predict(Xs, return_std=True)
+        mu, std = self._ensemble_predict(Xs)
         return float(mu[0]), float(std[0])
 
     def score_many(self, mutants: List[str], protenix_pipeline) -> pd.DataFrame:
-        """Score a list of mutations. Returns DataFrame with predicted_score + std."""
+        """Score a list of mutations. Returns DataFrame with ensemble mean + total std.
+
+        Columns:
+          - mutant
+          - predicted_score  : ensemble mean
+          - predicted_std    : total uncertainty (aleatoric + epistemic)
+        """
         X = self._featurize(mutants, protenix_pipeline)
         Xs = self.scaler.transform(X)
-        mu, std = self.gpr.predict(Xs, return_std=True)
+        mu, std = self._ensemble_predict(Xs)
         return pd.DataFrame({"mutant": mutants, "predicted_score": mu, "predicted_std": std})
 
     def __repr__(self):
         t = self.training
-        return (f"<Scorer for {self.protein}, trained on {t.get('n_train', '?')} mutations, "
+        return (f"<Scorer for {self.protein}, ensemble of {self.n_seeds} GPRs, "
+                f"trained on {t.get('n_train', '?')} mutations, "
                 f"WT len {len(self.wt_seq) if self.wt_seq else '?'}, "
                 f"in-sample ρ={t.get('train_spearman_in_sample', float('nan')):.3f}>")
 

@@ -115,8 +115,14 @@ v9 score --model output/MY_ENZYME/scorer.pkl \
 ```
 
 The `scorer.pkl` is fully self-contained — it bundles the WT sequence, active
-sites, PCA + scaler state, and the fitted GPR. Loading it later only requires
-GPU access for ESM-2 / Protenix to featurize the *new* mutations.
+sites, PCA + scaler state, and an **ensemble of 10 GPRs** (different
+`random_state` seeds, same data). Loading it later only requires GPU access
+for ESM-2 / Protenix to featurize the *new* mutations.
+
+Scoring averages all 10 ensemble members and reports **total uncertainty**:
+`σ_total = √(aleatoric² + epistemic²)` where aleatoric = mean per-GPR posterior
+variance and epistemic = variance across the 10 ensemble means. Use σ for
+active-learning / confidence-aware ranking.
 
 Programmatic API:
 ```python
