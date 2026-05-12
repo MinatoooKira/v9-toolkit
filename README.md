@@ -13,6 +13,76 @@ two ways:
 The v9 protocol was validated on BLAT_ECOLX and 8 additional ProteinGym
 proteins.
 
+## Who this is for
+
+**Wet-lab teams** with a small set of measured mutations who want to
+prioritize the next batch:
+> "I measured 200 mutations of my enzyme. Which of the remaining
+> candidates is worth screening next?" Train a `scorer.pkl` on what you
+> already have, ask it for `μ ± σ` on the rest.
+
+**ML / structural-biology researchers** benchmarking protein-fitness
+predictors:
+> "Does a structure-aware feature beat a sequence-only baseline at small
+> sample sizes?" The pipeline ships a 4-model × 10-seed × 4-sample-size
+> ablation grid for clean comparisons.
+
+### You don't need a full DMS scan
+
+The repo and validation use ProteinGym DMS datasets (thousands of
+mutations measured at once) because they're the cleanest public
+benchmark. **Your own usage doesn't require DMS-scale data.** A few
+hundred measured single-point mutations from your own wet lab are enough
+— the active-site `WINDOW=10` filter further focuses training to
+~100–1000 functionally-relevant points, well inside GPR's data-efficient
+regime. The fitness value can be anything you measure (kcat,
+fluorescence, binding affinity, growth rate, …); the input format is
+just `mutant, score`.
+
+### Roadmap: combination mutations + active learning
+
+The current toolkit scores single-point mutations. The underlying
+Protenix Pairformer is inherently sensitive to pairwise residue
+interactions — feeding it a multi-mutation sequence naturally captures
+joint structural effects, so the toolkit has clear architectural
+potential to extend to combination mutations. We are working on:
+
+- **Active-learning loop** — choose the next batch of *N* mutations to
+  measure by ranking on `μ + κ·σ` (UCB) or `σ`-max (exploration),
+  closing the experimental design loop.
+- **Combination-mutation designer** — generates high-`μ` double / triple
+  mutation candidates with combined uncertainty estimates, guiding
+  combinatorial library design where the single-mutation scorer alone
+  cannot.
+
+Both are planned releases on this repo.
+
+## What you'll get
+
+For each new mutation, a calibrated mean and uncertainty (this is the
+real output from the verified `v9 score` pipeline on BLAT_ECOLX):
+
+```
+mutant   predicted_score   predicted_std
+M1A     -2.0501           0.8293
+S51R    -2.1819           0.7681
+R238A   -2.2613           0.8196
+```
+
+`predicted_score` (μ) is the 10-GPR ensemble mean; `predicted_std` (σ) is
+total uncertainty `√(aleatoric² + epistemic²)`. Together they support
+ranking, skipping, or active-learning selection (see [Mode B](#mode-b--real-experiment-train--score-deploy-as-a-tool)
+for the decision table).
+
+The underlying GPR is well-calibrated even at modest training sizes:
+
+![HSP82_YEAST 4-panel](results/v9_HSP82_YEAST/gpr_validation_HSP82_YEAST.png)
+
+HSP82_YEAST example — `GPR(ESM2 LLR + z_pair PCA 10D)` reaches
+Spearman ρ = 0.634 at n=800, beating ESM2 LLR direct (ρ = 0.586) on 9/10
+seeds (+1.24σ effect size, matching the original v9 BLAT reference
++1.26σ).
+
 ## Quick view of the strategy
 
 ```
@@ -229,9 +299,24 @@ high-resolution figures are in [`results/`](results/).
 
 ### Feature-representation comparison (v9 vs EvolvePro-style features)
 
-This is **not** a head-to-head of full methods — it is a controlled
-comparison of *input features* under a fixed evaluation harness. We swap
-only the features; everything else (active-site filter, train/test
+> **Note**: this is a *feature* comparison under v9's evaluation protocol,
+> **not** a head-to-head of the full EvolvePro method. See [Methodology
+> notes](#methodology-notes-on-the-evolvepro-comparison) below.
+
+![v9 vs EvolvePro-style — bar chart](results/v9_vs_evolvepro/v9_vs_evolvepro_bar.png)
+
+Per-protein learning curves (Spearman ρ vs training sample size):
+
+![v9 vs EvolvePro-style — per-protein curves](results/v9_vs_evolvepro/v9_vs_evolvepro_per_protein.png)
+
+**Under this harness, v9's features win on 6/8 proteins.** EvolvePro-style
+wins on TPMT and PTEN — both have weak ESM2 LLR baselines where the richer
+2560D mean embedding carries more residual information than the 1536D
+Protenix pair-rep does.
+
+#### Methodology notes on the EvolvePro comparison
+
+We swap only the features; everything else (active-site filter, train/test
 protocol, sample sizes, seeds) is held constant.
 
 |             | Features                                       | Regressor |
@@ -245,21 +330,11 @@ protocol, sample sizes, seeds) is held constant.
 - Selection loop: official runs an **iterative active-learning loop** with an acquisition function (UCB / greedy); we run **single-shot random 80/20 train/test** at fixed sample sizes.
 - Filtering: official applies **no active-site filter**; we force `WINDOW=10` for consistency with v9.
 
-So the absolute numbers below should **not** be read as "EvolvePro's headline
-performance" — official EvolvePro on its own iterative protocol scores
-higher. What this table isolates is *which feature representation carries
-more usable signal under v9's evaluation harness*.
-
-![v9 vs EvolvePro-style — bar chart](results/v9_vs_evolvepro/v9_vs_evolvepro_bar.png)
-
-Per-protein learning curves (Spearman ρ vs training sample size):
-
-![v9 vs EvolvePro-style — per-protein curves](results/v9_vs_evolvepro/v9_vs_evolvepro_per_protein.png)
-
-**Under this harness, v9's features win on 6/8 proteins.** EvolvePro-style
-features win on TPMT and PTEN — both have weak ESM2 LLR baselines where the
-richer 2560D mean embedding carries more residual information than the 1536D
-Protenix pair-rep does.
+So the absolute "EvolvePro-style" numbers above should **not** be read as
+EvolvePro's headline performance — its iterative active-learning protocol
+scores higher than this harness reports. What this comparison isolates is
+*which feature representation carries more usable signal when the protocol
+is held fixed*.
 
 ### Per-protein results @ n=800
 
@@ -281,15 +356,6 @@ Bold marks the higher of v9 / EvolvePro-style on each row.
 Pair-rep PCA 10D **consistently beats ESM2 LLR baseline on all 8 proteins**
 (all effect sizes > 0). PTEN_HUMAN shows the largest gain — pair-rep
 "rescues" a protein where ESM-2 alone has essentially no predictive signal.
-
-### Example: HSP82_YEAST main figure
-
-![HSP82 4-panel](results/v9_HSP82_YEAST/gpr_validation_HSP82_YEAST.png)
-
-GPR(ESM2 LLR + z_pair PCA 10D) reaches Spearman ρ = 0.634 at n=800 (vs ESM2 LLR
-direct = 0.586), with 9/10 seeds beating the ESM2 LLR direct baseline. Effect
-size +1.24σ — matches the original v9 BLAT reference (+1.26σ) almost exactly,
-demonstrating the pipeline reproduces v9-quality results on a new protein.
 
 ### BLAT_ECOLX — development case study
 
