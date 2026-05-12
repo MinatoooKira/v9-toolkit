@@ -71,12 +71,3 @@ embedding carries more usable information than 1536D Protenix pair-rep does.
 | AMIE_PSEAE | +1.04σ | |
 
 All 8 candidate proteins show **positive effect size** above ESM2 LLR baseline.
-
-## CALM1 — known failure mode (not included)
-
-CALM1_HUMAN was tested but excluded as a documented failure case:
-- ESM2 LLR direct ρ ≈ 0.19 (very weak ESM signal)
-- 6 EF-hand active sites span ~70% of the 148 aa protein when WINDOW=10
-- Functional landscape dominated by conformational dynamics, not local structure
-
-This is the expected limitation when the active-site filter loses its focusing benefit.
