@@ -15,17 +15,19 @@ proteins.
 
 ## Who this is for
 
-**Wet-lab teams** with a small set of measured mutations who want to
-prioritize the next batch:
+Mainly **wet-lab teams** with a small set of measured mutations who want
+to prioritize the next batch:
 > "I measured 200 mutations of my enzyme. Which of the remaining
 > candidates is worth screening next?" Train a `scorer.pkl` on what you
 > already have, ask it for `μ ± σ` on the rest.
 
-**ML / structural-biology researchers** benchmarking protein-fitness
-predictors:
-> "Does a structure-aware feature beat a sequence-only baseline at small
-> sample sizes?" The pipeline ships a 4-model × 10-seed × 4-sample-size
-> ablation grid for clean comparisons.
+A secondary audience is **researchers who want to reproduce or extend
+the v9 validation on their own protein**:
+> "Does pair-rep + GPR beat sequence-only baselines on *my* DMS dataset
+> the same way it did on the 8 ProteinGym proteins?" Run the same
+> 4-model × 10-seed × 4-sample-size ablation grid on your data and find
+> out. (This is the same protocol we used to produce the validation in
+> `results/` — not a generic benchmark harness.)
 
 ### You don't need a full DMS scan
 
@@ -55,7 +57,8 @@ potential to extend to combination mutations. We are working on:
   combinatorial library design where the single-mutation scorer alone
   cannot.
 
-Both are planned releases on this repo.
+Both will be released as separate repositories; this one stays focused
+on the single-mutation scoring pipeline.
 
 ## What you'll get
 
