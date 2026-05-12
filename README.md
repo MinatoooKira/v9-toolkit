@@ -144,11 +144,14 @@ LLR alone.
 
 ## Citation
 
-If this toolkit is useful, please cite the upstream tools:
+If this toolkit is useful, please cite the upstream tools it depends on:
 
-- ESM-2: Lin et al., *Science* 2023
-- Protenix: ByteDance, https://github.com/bytedance/Protenix
-- Original v9 strategy (BLAT): see references in repo
+- **ESM-2**: Lin et al., *Science* 2023
+- **Protenix**: ByteDance, https://github.com/bytedance/Protenix
+
+And reference this repository directly:
+
+- **v9-toolkit**: https://github.com/MinatoooKira/v9-toolkit
 
 ## License
 
