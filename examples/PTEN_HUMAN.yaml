@@ -5,7 +5,7 @@
 #   v9 validate --config examples/PTEN_HUMAN.yaml   (CPU for GPR + figures)
 
 protein: PTEN_HUMAN
-dms_csv: ./data/PTEN_HUMAN_Matreyek_2021.csv
+dms_csv: ./data/proteingym_subset/PTEN_HUMAN_Matreyek_2021.csv
 # PTEN phosphatase catalytic/active site (1-indexed)
 active_sites_1idx: [92, 93, 124, 128, 130, 138]
 output_dir: ./output/PTEN_HUMAN

@@ -54,6 +54,14 @@ pip install -e .
 #   https://github.com/bytedance/Protenix
 ```
 
+## Data
+
+The 10 DMS CSVs used by the validation in [`results/`](results/) ship in
+[`data/proteingym_subset/`](data/proteingym_subset/) (15 MB total). The full
+217-protein ProteinGym substitutions database (~1 GB) is not stored here —
+fetch it on demand with `bash scripts/download_proteingym.sh`. See
+[`data/README.md`](data/README.md) for the data schema and citation.
+
 ## Quick start
 
 1. Make a YAML config (see `examples/PTEN_HUMAN.yaml`).
