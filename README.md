@@ -121,8 +121,32 @@ for ESM-2 / Protenix to featurize the *new* mutations.
 
 Scoring averages all 10 ensemble members and reports **total uncertainty**:
 `σ_total = √(aleatoric² + epistemic²)` where aleatoric = mean per-GPR posterior
-variance and epistemic = variance across the 10 ensemble means. Use σ for
-active-learning / confidence-aware ranking.
+variance and epistemic = variance across the 10 ensemble means.
+
+#### Interpreting the score + uncertainty in practice
+
+Each scored mutation comes back with `predicted_score` (μ) and `predicted_std`
+(σ). The two together support common wet-lab workflows:
+
+| (μ, σ) pattern | Interpretation | Suggested action |
+|---|---|---|
+| **High μ, low σ** | Model is confident this mutation is good | Prioritize for wet-lab confirmation |
+| **Low μ, low σ** | Model is confident it's bad | Skip — save reagents |
+| **Any μ, high σ** | Model is uncertain (training set is sparse near this mutation) | Active-learning candidate — measuring it most informs the model |
+| **High μ, moderate σ** | Plausibly good but worth verifying | Include in next round if budget allows |
+
+**Two flavors of uncertainty inside σ**:
+
+- **Aleatoric** (per-GPR posterior variance, averaged): "given the kernel I
+  learned, how confident is one GPR about this point?" Reflects how far the
+  mutation is from training data in feature space.
+- **Epistemic** (variance across the 10 ensemble means): "do different kernel
+  optimization runs agree on this mutation?" Large epistemic σ signals that
+  the kernel shape itself is under-constrained — typically means the training
+  data doesn't pin down the right model in this region.
+
+For active learning, rank by σ (or by an acquisition function like
+`μ + κ·σ` with κ≈2) to pick the next batch of mutations to measure.
 
 Programmatic API:
 ```python
