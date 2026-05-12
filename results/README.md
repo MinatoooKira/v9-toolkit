@@ -13,14 +13,19 @@ Each contains the four standardized outputs:
 | `raw_results_v9.csv` | 160 rows = 4 models × 10 seeds × 4 sample sizes (Spearman ρ) |
 | `raw_results_evolvepro.csv` | EvolvePro RF baseline (40 rows = 10 seeds × 4 sample sizes) |
 
-## Reference: `v9_BLAT_reference/`
+## `v9_BLAT_reference/` — development case study
 
-Original v9 protocol on BLAT_ECOLX (the first protein validated). Includes
-4 models with PAE/Protenix feature comparison:
-- GPR(ESM2 LLR only)
-- GPR(ESM2 LLR + AF3 conf)              — pae_mean + pTM
-- GPR(ESM2 LLR + AF3 PAE 8D)            — 5D PCA of PAE active-site columns
-- GPR(ESM2 LLR + Protenix z 10D)        — equivalent to v9-strict on other proteins
+BLAT_ECOLX was the first protein on which this strategy was iterated. This
+folder records the design exploration with 4 alternative feature
+configurations, comparing AF3-derived PAE features with Protenix pair-rep:
+
+- GPR(ESM2 LLR only) — sequence-only baseline
+- GPR(ESM2 LLR + AF3 conf) — adds AF3 pae_mean + pTM scalars
+- GPR(ESM2 LLR + AF3 PAE 8D) — adds 5D PCA of AF3 PAE active-site columns
+- GPR(ESM2 LLR + Protenix z 10D) — final design, kept for the other 8 proteins
+
+This 4-way breakdown is unique to BLAT — later proteins use Protenix pair-rep
+only. The folder preserves the design history.
 
 ## Cross-method comparison: `v9_vs_evolvepro/`
 

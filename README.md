@@ -162,12 +162,21 @@ direct = 0.586), with 9/10 seeds beating the ESM2 LLR direct baseline. Effect
 size +1.24σ — matches the original v9 BLAT reference (+1.26σ) almost exactly,
 demonstrating the pipeline reproduces v9-quality results on a new protein.
 
-### Reference: BLAT_ECOLX (original v9 protocol)
+### BLAT_ECOLX — development case study
 
-`results/v9_BLAT_reference/` reproduces the original v9 study with the full
-PAE/Protenix feature comparison: GPR(ESM2 LLR only) / +AF3 conf / +AF3 PAE 8D /
-+Protenix z 10D. Confirms the toolkit reproduces v9 BLAT (Pair-rep ρ = 0.78,
-matching the original protocol's headline number).
+`results/v9_BLAT_reference/` documents BLAT_ECOLX, the first protein on which
+this strategy was iterated. It carries an extra 4-model comparison that records
+the exploration from PAE-based features to Protenix pair-rep:
+
+- GPR(ESM2 LLR only) — sequence-only baseline
+- GPR(ESM2 LLR + AF3 conf) — adds AF3 pae_mean + pTM scalars
+- GPR(ESM2 LLR + AF3 PAE 8D) — adds 5D PCA of AF3 PAE active-site columns
+- GPR(ESM2 LLR + Protenix z 10D) — final design, equivalent to the v9-strict
+  model used on the other 8 proteins
+
+The Protenix pair-rep configuration reaches Spearman ρ = 0.78 at n=800. This
+4-model breakdown is BLAT-specific (later proteins use Protenix pair-rep only,
+without the AF3 ablation) — it preserves the design history for reference.
 
 ## Citation
 
