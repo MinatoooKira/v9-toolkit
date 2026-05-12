@@ -58,6 +58,15 @@ def train(cfg: PipelineConfig, hold_out_validation: bool = False,
         d = pickle.load(f)
     feats = d["features"]
     wt_seq = d.get("wt_seq")
+    if wt_seq is None and feats:
+        # Reconstruct from the first mutation: reverse mut_aa back to wt_aa.
+        # Required for older features.pkl files that pre-date the wt_seq field.
+        first = feats[0]
+        pos0 = first["mut_pos"] - 1
+        wt_aa = first["mutant"][0]
+        wt_seq = first["sequence"][:pos0] + wt_aa + first["sequence"][pos0+1:]
+        print(f"NOTE: features.pkl lacked 'wt_seq'; reconstructed from first mutation "
+              f"(length={len(wt_seq)}).")
     names = [ft["mutant"] for ft in feats]
     y_all = np.array([ft["dms_score"] for ft in feats])
     X_llr_all = np.array([[ft["llr"]] for ft in feats])

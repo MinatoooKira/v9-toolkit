@@ -21,7 +21,9 @@ import argparse
 import sys
 from pathlib import Path
 from .config import load
-from . import esm_llr, gpr, plots, train as train_mod, score as score_mod
+# NOTE: lazy-import heavy modules (esm_llr, gpr, plots, train, score) inside
+# each command branch so that `v9 score` doesn't require matplotlib, and
+# `v9 plot` doesn't require torch/esm, etc. — minimizes env-dependency surface.
 
 
 def main():
@@ -47,12 +49,13 @@ def main():
     args = ap.parse_args()
 
     if args.cmd == "score":
+        from . import score as score_mod
+        from .protenix_loader import build_from_config
+        import pandas as pd
         scorer = score_mod.Scorer.load(args.model)
         print(scorer)
         cfg = load(args.config)
-        from .protenix_loader import build_from_config as load_protenix
-        pipeline = load_protenix(cfg)
-        import pandas as pd
+        pipeline = build_from_config(cfg)
         mutants = (pd.read_csv(args.input)["mutant"].tolist()
                    if args.input else [m.strip() for m in args.mutants.split(",")])
         df = scorer.score_many(mutants, pipeline)
@@ -63,26 +66,28 @@ def main():
 
     cfg = load(args.config)
     if args.cmd == "prep":
+        from . import esm_llr
         esm_llr.compute_features(cfg)
     elif args.cmd == "extract":
         from . import pair_rep
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from scripts.protenix_loader import load_protenix
-        pair_rep.extract_pair_rep(cfg, model_pipeline=load_protenix(cfg))
+        from .protenix_loader import build_from_config
+        pair_rep.extract_pair_rep(cfg, model_pipeline=build_from_config(cfg))
     elif args.cmd == "validate":
+        from . import gpr, plots
         gpr.validate(cfg)
         plots.generate(cfg)
     elif args.cmd == "plot":
+        from . import plots
         plots.generate(cfg)
     elif args.cmd == "run":
+        from . import esm_llr, pair_rep, gpr, plots
+        from .protenix_loader import build_from_config
         esm_llr.compute_features(cfg)
-        from . import pair_rep
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from scripts.protenix_loader import load_protenix
-        pair_rep.extract_pair_rep(cfg, model_pipeline=load_protenix(cfg))
+        pair_rep.extract_pair_rep(cfg, model_pipeline=build_from_config(cfg))
         gpr.validate(cfg)
         plots.generate(cfg)
     elif args.cmd == "train":
+        from . import train as train_mod
         train_mod.train(cfg, hold_out_validation=args.hold_out)
 
 
