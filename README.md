@@ -79,12 +79,11 @@ for the decision table).
 
 The underlying GPR is well-calibrated even at modest training sizes:
 
-![HSP82_YEAST 4-panel](results/v9_HSP82_YEAST/gpr_validation_HSP82_YEAST.png)
+![NUD15_HUMAN 4-panel](results/v9_NUD15_HUMAN/gpr_validation_NUD15_HUMAN.png)
 
-HSP82_YEAST example — `GPR(ESM2 LLR + z_pair PCA 10D)` reaches
-Spearman ρ = 0.634 at n=800, beating ESM2 LLR direct (ρ = 0.586) on 9/10
-seeds (+1.24σ effect size, matching the original v9 BLAT reference
-+1.26σ).
+NUD15_HUMAN example — `GPR(ESM2 LLR + z_pair PCA 10D)` reaches
+Spearman ρ = 0.782 at n=800, beating ESM2 LLR direct (ρ = 0.689) on
+all 10 seeds (+3.35σ effect size).
 
 ## Quick view of the strategy
 
