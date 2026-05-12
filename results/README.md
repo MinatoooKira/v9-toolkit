@@ -27,11 +27,31 @@ configurations, comparing AF3-derived PAE features with Protenix pair-rep:
 This 4-way breakdown is unique to BLAT — later proteins use Protenix pair-rep
 only. The folder preserves the design history.
 
-## Cross-method comparison: `v9_vs_evolvepro/`
+## Feature-representation comparison: `v9_vs_evolvepro/`
 
-Head-to-head: v9 GPR(ESM2 LLR + z_pair PCA 10D) vs EvolvePro RandomForest on
-ESM-2 3B mean embeddings. Same train/test splits, same active-site filter,
-10 seeds, n=800.
+**This is not a head-to-head of full methods — it is a controlled
+comparison of input features under a fixed evaluation harness.**
+
+| | Features | Regressor |
+|--|----------|-----------|
+| v9              | ESM-2 LLR + Protenix z_pair PCA 10D (11D)     | GPR (Matérn + WhiteKernel) |
+| EvolvePro-style | ESM-2 3B mean-pool (2560D)                    | RandomForest, hyperparams copied verbatim from [`evolvepro/src/model.py`](https://github.com/mat10d/EvolvePro) |
+
+Shared protocol: same DMS data, same `WINDOW=10` active-site filter, same
+random 80/20 train/test splits at sample_size ∈ {100, 200, 400, 800},
+10 seeds.
+
+**Differences from the official EvolvePro protocol:**
+
+- Official default backbone is **ESM-2 15B**; we used **3B** (matched to v9 for fair feature isolation).
+- Official EvolvePro runs an **iterative active-learning loop** with an acquisition function; we run **single-shot random 80/20 train/test**.
+- Official EvolvePro applies **no active-site filter**; we force `WINDOW=10` for consistency with v9.
+
+So the absolute "EvolvePro-style" numbers below should **not** be read as
+EvolvePro's headline performance — its iterative active-learning protocol
+scores higher than this harness reports. What this isolates is *which
+feature representation carries more usable signal when the protocol is
+held fixed*.
 
 | File | Contents |
 |------|----------|
@@ -39,22 +59,25 @@ ESM-2 3B mean embeddings. Same train/test splits, same active-site filter,
 | `v9_vs_evolvepro_per_protein.png` | 8 line plots, sample-size vs Spearman ρ |
 | `summary.csv` | Numeric table with mean, std, delta, winner per protein |
 
-## Headline numbers (@ n=800)
+## Numbers under this harness (@ n=800)
 
-| Protein | ESM2 LLR direct | v9 ρ | EvolvePro ρ | Δ | Winner |
+Bold marks the higher of v9 / EvolvePro-style on each row.
+
+| Protein | ESM2 LLR direct | v9 ρ | EvolvePro-style ρ | Δ | Higher |
 |---------|-----------|------|-------------|----|--------|
-| KKA2_KLEPN | +0.661 | **+0.713** | +0.640 | +0.073 | v9 |
+| KKA2_KLEPN  | +0.661 | **+0.713** | +0.640 | +0.073 | v9 |
 | NUD15_HUMAN | +0.689 | **+0.782** | +0.746 | +0.036 | v9 |
-| P53_HUMAN | +0.616 | **+0.699** | +0.651 | +0.048 | v9 |
+| P53_HUMAN   | +0.616 | **+0.699** | +0.651 | +0.048 | v9 |
 | HSP82_YEAST | +0.586 | **+0.634** | +0.528 | +0.106 | v9 |
-| DYR_ECOLI | +0.529 | **+0.631** | +0.593 | +0.038 | v9 |
-| AMIE_PSEAE | +0.576 | **+0.615** | +0.604 | +0.011 | v9 |
-| TPMT_HUMAN | +0.459 | +0.567 | **+0.603** | −0.037 | EvolvePro |
-| PTEN_HUMAN | +0.237 | +0.593 | **+0.633** | −0.040 | EvolvePro |
+| DYR_ECOLI   | +0.529 | **+0.631** | +0.593 | +0.038 | v9 |
+| AMIE_PSEAE  | +0.576 | **+0.615** | +0.604 | +0.011 | v9 |
+| TPMT_HUMAN  | +0.459 | +0.567 | **+0.603** | −0.037 | EvolvePro-style |
+| PTEN_HUMAN  | +0.237 | +0.593 | **+0.633** | −0.040 | EvolvePro-style |
 
-**v9 wins on 6/8 proteins**. EvolvePro wins only on 2 proteins where the ESM2 LLR
-baseline is weakest (TPMT 0.46, PTEN 0.24) — there, the richer 2560D ESM mean
-embedding carries more usable information than 1536D Protenix pair-rep does.
+**Under this harness, v9 features win on 6/8 proteins.** The two losses
+(TPMT, PTEN) are both proteins where the ESM2 LLR baseline is weakest —
+the richer 2560D mean embedding still carries usable information there
+that 1536D Protenix pair-rep does not.
 
 ## Effect size summary (vs ESM2 LLR direct, @ n=800)
 

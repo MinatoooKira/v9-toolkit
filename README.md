@@ -227,31 +227,52 @@ Pipeline was validated on **8 ProteinGym proteins** + reproduced on
 **BLAT_ECOLX** (the original v9 reference). All raw results, CSVs, and
 high-resolution figures are in [`results/`](results/).
 
-### Cross-method comparison (v9 vs EvolvePro)
+### Feature-representation comparison (v9 vs EvolvePro-style features)
 
-Head-to-head with EvolvePro (ESM-2 3B mean + RandomForest), same train/test
-splits and active-site filter:
+This is **not** a head-to-head of full methods — it is a controlled
+comparison of *input features* under a fixed evaluation harness. We swap
+only the features; everything else (active-site filter, train/test
+protocol, sample sizes, seeds) is held constant.
 
-![v9 vs EvolvePro](results/v9_vs_evolvepro/v9_vs_evolvepro_bar.png)
+|             | Features                                       | Regressor |
+|-------------|------------------------------------------------|-----------|
+| v9          | ESM-2 LLR + Protenix z_pair PCA 10D (11D)      | GPR (Matérn + WhiteKernel) |
+| EvolvePro-style | ESM-2 mean-pool (2560D)                    | RandomForest, hyperparams copied verbatim from [`evolvepro/src/model.py`](https://github.com/mat10d/EvolvePro) |
 
-**v9 wins on 6/8 proteins**. EvolvePro wins on TPMT and PTEN — both have weak
-ESM2 LLR baselines where the richer 2560D ESM mean embedding outpaces the 1536D
-Protenix pair-rep.
+**Where this departs from the official EvolvePro protocol:**
+
+- Backbone: official default is **ESM-2 15B**; we use **3B** (matched to v9 for fair feature comparison).
+- Selection loop: official runs an **iterative active-learning loop** with an acquisition function (UCB / greedy); we run **single-shot random 80/20 train/test** at fixed sample sizes.
+- Filtering: official applies **no active-site filter**; we force `WINDOW=10` for consistency with v9.
+
+So the absolute numbers below should **not** be read as "EvolvePro's headline
+performance" — official EvolvePro on its own iterative protocol scores
+higher. What this table isolates is *which feature representation carries
+more usable signal under v9's evaluation harness*.
+
+![v9 vs EvolvePro-style](results/v9_vs_evolvepro/v9_vs_evolvepro_bar.png)
+
+**Under this harness, v9's features win on 6/8 proteins.** EvolvePro-style
+features win on TPMT and PTEN — both have weak ESM2 LLR baselines where the
+richer 2560D mean embedding carries more residual information than the 1536D
+Protenix pair-rep does.
 
 ### Per-protein results @ n=800
 
 Effect size = `(mean − ESM2 LLR_direct) / std`:
 
-| Protein | Pair-rep PCA 10D ρ | ESM2 LLR direct ρ | Δ | Effect size | v9 vs EvolvePro |
-|---------|--------------------|---------------|----|----------|------------------|
-| PTEN_HUMAN | 0.593 | 0.237 | +0.356 | **+6.40σ** | EvolvePro 0.633 |
-| NUD15_HUMAN | 0.782 | 0.689 | +0.093 | +3.35σ | **v9 wins** |
-| KKA2_KLEPN | 0.713 | 0.661 | +0.052 | +3.01σ | **v9 wins** |
-| P53_HUMAN | 0.699 | 0.616 | +0.083 | +3.26σ | **v9 wins** |
-| TPMT_HUMAN | 0.567 | 0.459 | +0.108 | +2.61σ | EvolvePro 0.603 |
-| DYR_ECOLI | 0.631 | 0.529 | +0.102 | +2.27σ | **v9 wins** |
-| HSP82_YEAST | 0.634 | 0.586 | +0.048 | +1.24σ | **v9 wins** |
-| AMIE_PSEAE | 0.615 | 0.576 | +0.039 | +1.04σ | **v9 wins** |
+Bold marks the higher of v9 / EvolvePro-style on each row.
+
+| Protein | Pair-rep PCA 10D ρ | ESM2 LLR direct ρ | Δ vs LLR | Effect size | EvolvePro-style ρ |
+|---------|--------------------|---------------|----------|----------|------------------|
+| PTEN_HUMAN  | 0.593 | 0.237 | +0.356 | **+6.40σ** | **0.633** |
+| NUD15_HUMAN | **0.782** | 0.689 | +0.093 | +3.35σ | 0.746 |
+| KKA2_KLEPN  | **0.713** | 0.661 | +0.052 | +3.01σ | 0.640 |
+| P53_HUMAN   | **0.699** | 0.616 | +0.083 | +3.26σ | 0.651 |
+| TPMT_HUMAN  | 0.567 | 0.459 | +0.108 | +2.61σ | **0.603** |
+| DYR_ECOLI   | **0.631** | 0.529 | +0.102 | +2.27σ | 0.593 |
+| HSP82_YEAST | **0.634** | 0.586 | +0.048 | +1.24σ | 0.528 |
+| AMIE_PSEAE  | **0.615** | 0.576 | +0.039 | +1.04σ | 0.604 |
 
 Pair-rep PCA 10D **consistently beats ESM2 LLR baseline on all 8 proteins**
 (all effect sizes > 0). PTEN_HUMAN shows the largest gain — pair-rep
