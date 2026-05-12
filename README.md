@@ -117,30 +117,56 @@ where Protenix pair-rep carries the strongest signal.
 WINDOW=10 was set by the original v9 BLAT protocol; configurable per protein
 via the `window` field.
 
-## Validated proteins (paper-strength results @ n=800)
+## Validation results
 
-8 ProteinGym proteins were validated with this pipeline. Effect size = `(mean − LLR_direct) / std`:
+Pipeline was validated on **8 ProteinGym proteins** + reproduced on
+**BLAT_ECOLX** (the original v9 reference). All raw results, CSVs, and
+high-resolution figures are in [`results/`](results/).
 
-| Protein | Pair-rep PCA 10D ρ | LLR direct ρ | Δ | Effect size |
-|---------|--------------------|---------------|----|---------------|
-| PTEN_HUMAN | 0.593 | 0.237 | +0.356 | **+6.40σ** |
-| NUD15_HUMAN | 0.782 | 0.689 | +0.093 | +3.35σ |
-| KKA2_KLEPN | 0.713 | 0.661 | +0.052 | +3.01σ |
-| P53_HUMAN | 0.699 | 0.616 | +0.083 | +3.26σ |
-| TPMT_HUMAN | 0.567 | 0.459 | +0.108 | +2.61σ |
-| DYR_ECOLI | 0.631 | 0.529 | +0.102 | +2.27σ |
-| HSP82_YEAST | 0.634 | 0.586 | +0.048 | +1.24σ |
-| AMIE_PSEAE | 0.615 | 0.576 | +0.039 | +1.04σ |
+### Cross-method comparison (v9 vs EvolvePro)
 
-Pair-rep PCA 10D consistently beats LLR baseline; effect size scales inversely
-with LLR baseline strength.
+Head-to-head with EvolvePro (ESM-2 3B mean + RandomForest), same train/test
+splits and active-site filter:
 
-## Comparison with EvolvePro
+![v9 vs EvolvePro](results/v9_vs_evolvepro/v9_vs_evolvepro_bar.png)
 
-In a fair head-to-head (same train/test splits, same active-site filter, same
-ESM-2 3B), v9 wins on 6/8 proteins. EvolvePro (RF over mean ESM embedding)
-wins on TPMT and PTEN, where the ESM mean has more usable information than
-LLR alone.
+**v9 wins on 6/8 proteins**. EvolvePro wins on TPMT and PTEN — both have weak
+LLR baselines where the richer 2560D ESM mean embedding outpaces the 1536D
+Protenix pair-rep.
+
+### Per-protein results @ n=800
+
+Effect size = `(mean − LLR_direct) / std`:
+
+| Protein | Pair-rep PCA 10D ρ | LLR direct ρ | Δ | Effect size | v9 vs EvolvePro |
+|---------|--------------------|---------------|----|----------|------------------|
+| PTEN_HUMAN | 0.593 | 0.237 | +0.356 | **+6.40σ** | EvolvePro 0.633 |
+| NUD15_HUMAN | 0.782 | 0.689 | +0.093 | +3.35σ | **v9 wins** |
+| KKA2_KLEPN | 0.713 | 0.661 | +0.052 | +3.01σ | **v9 wins** |
+| P53_HUMAN | 0.699 | 0.616 | +0.083 | +3.26σ | **v9 wins** |
+| TPMT_HUMAN | 0.567 | 0.459 | +0.108 | +2.61σ | EvolvePro 0.603 |
+| DYR_ECOLI | 0.631 | 0.529 | +0.102 | +2.27σ | **v9 wins** |
+| HSP82_YEAST | 0.634 | 0.586 | +0.048 | +1.24σ | **v9 wins** |
+| AMIE_PSEAE | 0.615 | 0.576 | +0.039 | +1.04σ | **v9 wins** |
+
+Pair-rep PCA 10D **consistently beats LLR baseline on all 8 proteins**
+(all effect sizes > 0). PTEN_HUMAN shows the largest gain — pair-rep
+"rescues" a protein where ESM-2 alone has essentially no predictive signal.
+
+### Example: KKA2_KLEPN main figure
+
+![KKA2 4-panel](results/v9_KKA2_KLEPN/gpr_validation_KKA2_KLEPN.png)
+
+Pair-rep PCA 10D reaches Spearman ρ = 0.713 at n=800 (vs LLR direct = 0.661),
+with 10/10 seeds beating the LLR direct baseline. Best-seed scatter shows
+predictions tightly tracking the y=x line.
+
+### Reference: BLAT_ECOLX (original v9 protocol)
+
+`results/v9_BLAT_reference/` reproduces the original v9 study with the full
+PAE/Protenix feature comparison: GPR(LLR only) / +AF3 conf / +AF3 PAE 8D /
++Protenix z 10D. Confirms the toolkit reproduces v9 BLAT (Pair-rep ρ = 0.78,
+matching the original protocol's headline number).
 
 ## Citation
 
