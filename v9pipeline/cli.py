@@ -50,8 +50,7 @@ def main():
         scorer = score_mod.Scorer.load(args.model)
         print(scorer)
         cfg = load(args.config)
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from scripts.protenix_loader import load_protenix
+        from .protenix_loader import build_from_config as load_protenix
         pipeline = load_protenix(cfg)
         import pandas as pd
         mutants = (pd.read_csv(args.input)["mutant"].tolist()

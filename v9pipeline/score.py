@@ -185,11 +185,11 @@ def main():
 
     # Need Protenix pipeline
     from .config import load
-    from scripts.protenix_loader import load_protenix
+    from .protenix_loader import build_from_config
     cfg = load(args.config) if args.config else None
     if cfg is None:
         sys.exit("error: --config required (used to set up Protenix pipeline for new mutations)")
-    pipeline = load_protenix(cfg)
+    pipeline = build_from_config(cfg)
 
     df = s.score_many(mutants, pipeline)
     df.to_csv(args.output, index=False)

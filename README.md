@@ -50,9 +50,14 @@ git clone https://github.com/MinatoooKira/v9-toolkit.git
 cd v9-toolkit
 pip install -e .
 
-# Pair-rep step also requires Protenix (separate install):
-#   https://github.com/bytedance/Protenix
+# Pair-rep extraction (Steps 2 / extract / score) also requires Protenix:
+git clone https://github.com/bytedance/Protenix
+cd Protenix && pip install -e . && cd ..
+# (or: export PROTENIX_PATH=/path/to/Protenix if not pip-installed)
 ```
+
+See [`docs/protenix_setup.md`](docs/protenix_setup.md) for the full Protenix
+adapter guide, including SLURM templates and troubleshooting.
 
 ## Data
 
