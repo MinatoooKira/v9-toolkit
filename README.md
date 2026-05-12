@@ -84,6 +84,48 @@ On a SLURM cluster:
 sbatch examples/run_pairrep.slurm examples/PTEN_HUMAN.yaml
 ```
 
+## Two operational modes
+
+### Mode A — DMS evaluation (above)
+
+For benchmark/ablation work: produces the 4-model GPR comparison + figures
+shown in `results/`.
+
+### Mode B — Real-experiment train & score (deploy as a tool)
+
+For wet-lab workflows: fit one GPR on your measured mutations, save it, then
+score new mutations on demand.
+
+```bash
+# 1. Prep + extract pair-rep for your training mutations (one-time)
+v9 prep    --config examples/my_experiment.yaml
+v9 extract --config examples/my_experiment.yaml
+
+# 2. Train: fit GPR(ESM2 LLR + z_pair PCA 10D) on ALL your data, save scorer.pkl
+v9 train   --config examples/my_experiment.yaml --hold-out
+
+# 3. Score new mutations later (any time, repeatable)
+echo "mutant" > new_mutants.csv
+echo "K53D"  >> new_mutants.csv
+echo "Y178A" >> new_mutants.csv
+v9 score --model output/MY_ENZYME/scorer.pkl \
+         --input new_mutants.csv \
+         --output scored.csv \
+         --config examples/my_experiment.yaml
+```
+
+The `scorer.pkl` is fully self-contained — it bundles the WT sequence, active
+sites, PCA + scaler state, and the fitted GPR. Loading it later only requires
+GPU access for ESM-2 / Protenix to featurize the *new* mutations.
+
+Programmatic API:
+```python
+from v9pipeline.score import Scorer
+s = Scorer.load("output/MY_ENZYME/scorer.pkl")
+mean, std = s.score_one("K53D", protenix_pipeline)
+df = s.score_many(["K53D", "Y178A", "R200K"], protenix_pipeline)
+```
+
 ## Standardized I/O
 
 **Input** (single YAML config):

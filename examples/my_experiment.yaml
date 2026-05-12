@@ -1,0 +1,35 @@
+# v9-toolkit example config: real-experiment (train + score) mode
+#
+# Typical workflow:
+#   v9 prep    --config examples/my_experiment.yaml   # ESM-2 LLR on training mutations
+#   v9 extract --config examples/my_experiment.yaml   # Protenix pair-rep on training mutations
+#   v9 train   --config examples/my_experiment.yaml --hold-out
+#       # → saves output/MY_ENZYME/scorer.pkl
+#
+# To score new mutations later:
+#   v9 score --model output/MY_ENZYME/scorer.pkl \
+#            --input new_mutations.csv \
+#            --output scored.csv \
+#            --config examples/my_experiment.yaml
+
+protein: MY_ENZYME
+dms_csv: ./data/my_experiment.csv          # mutant + mutated_sequence + DMS_score
+active_sites_1idx: [47, 53, 100]            # your functional/catalytic residues
+output_dir: ./output/MY_ENZYME
+
+# For small experimental data (< 1000 mutations), keep the filter loose:
+window: 20                                  # ±20 residues around active sites
+                                            # set to a large number (e.g. 9999) to disable filter
+
+# These are only used by DMS evaluation mode (`v9 validate`),
+# not by train/score — leave defaults.
+sample_sizes: [100, 200, 400, 800]
+n_seeds: 10
+train_ratio: 0.80
+
+esm_model: esm2_t36_3B_UR50D
+esm_layer: 36
+truncate_seq_to: null
+
+protenix_n_cycle: 4
+protenix_dtype: bf16

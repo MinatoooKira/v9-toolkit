@@ -6,7 +6,7 @@ import tempfile
 
 def test_imports():
     """All modules should import cleanly."""
-    from v9pipeline import config, esm_llr, pair_rep, gpr, plots, cli  # noqa
+    from v9pipeline import config, esm_llr, pair_rep, gpr, plots, cli, train, score  # noqa
 
 
 def test_config_load_save(tmp_path):
