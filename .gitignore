@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Data (regenerable; large)
+output/
+*.pkl
+*.npy
+*.pt
+*.torch_cache/
+
+# Logs / temp
+logs/
+*.log
+*.err
+pairrep_tmp/
+af3_outputs/
+.matplotlib/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Jupyter
+.ipynb_checkpoints/

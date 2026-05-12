@@ -1,0 +1,26 @@
+# v9-toolkit example config: PTEN_HUMAN
+# Run order:
+#   v9 prep     --config examples/PTEN_HUMAN.yaml   (CPU/GPU for ESM-2)
+#   v9 extract  --config examples/PTEN_HUMAN.yaml   (GPU for Protenix Pairformer)
+#   v9 validate --config examples/PTEN_HUMAN.yaml   (CPU for GPR + figures)
+
+protein: PTEN_HUMAN
+dms_csv: ./data/PTEN_HUMAN_Matreyek_2021.csv
+# PTEN phosphatase catalytic/active site (1-indexed)
+active_sites_1idx: [92, 93, 124, 128, 130, 138]
+output_dir: ./output/PTEN_HUMAN
+
+window: 10
+sample_sizes: [100, 200, 400, 800]
+n_seeds: 10
+train_ratio: 0.80
+
+esm_model: esm2_t36_3B_UR50D
+esm_layer: 36
+
+# If the DMS only covers positions 1..N (e.g. only DBD), truncate to skip
+# heavy Protenix inference on unused C-terminus. Leave null to keep full WT.
+truncate_seq_to: null
+
+protenix_n_cycle: 4
+protenix_dtype: bf16
