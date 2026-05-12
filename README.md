@@ -9,7 +9,7 @@ ProteinGym proteins.
 
 ```
   DMS CSV  ──►  Step 1 (esm_llr)
-                ESM-2 forward pass → per-position log-probs → LLR per mutation
+                ESM-2 forward pass → per-position log-probs → ESM2 LLR per mutation
                                                 │
                                                 ▼
                                           features.pkl
@@ -35,10 +35,10 @@ All use Matérn(ν=2.5) + WhiteKernel, isotropic length-scale, 3 restarts.
 
 | Model | Input | Total dims |
 |-------|-------|-----------|
-| GPR(LLR only) | LLR | 1D |
-| GPR(LLR + s_mut PCA 5D) | LLR + PCA(s_mut 384D → 5D) | 6D |
-| GPR(LLR + z_pair PCA 5D) | LLR + PCA(z 1536D → 5D) | 6D |
-| **GPR(LLR + z_pair PCA 10D)** ⭐ | LLR + PCA(z 1536D → 10D) | 11D (v9-strict) |
+| GPR(ESM2 LLR only) | LLR | 1D |
+| GPR(ESM2 LLR + s_mut PCA 5D) | LLR + PCA(s_mut 384D → 5D) | 6D |
+| GPR(ESM2 LLR + z_pair PCA 5D) | LLR + PCA(z 1536D → 5D) | 6D |
+| **GPR(ESM2 LLR + z_pair PCA 10D)** ⭐ | LLR + PCA(z 1536D → 10D) | 11D (v9-strict) |
 
 z_pair = z_fwd ⊕ z_rev, the cross-attention pair vectors from the mutation
 position to / from the 6 functional-site residues (768 + 768 = 1536D).
@@ -97,7 +97,7 @@ truncate_seq_to: null         # for multi-domain proteins where DMS covers a sub
 **Output** (under `output_dir`):
 ```
 output/PTEN_HUMAN/
-├── features.pkl              # ESM LLR + DMS + sequences
+├── features.pkl              # ESM2 LLR + DMS + sequences
 ├── meta.pkl                  # summary metadata
 ├── pair_rep_matrix.npy       # (N, 1920) Protenix pair-rep features
 ├── pair_rep_names.pkl        # aligned mutant names
@@ -131,14 +131,14 @@ splits and active-site filter:
 ![v9 vs EvolvePro](results/v9_vs_evolvepro/v9_vs_evolvepro_bar.png)
 
 **v9 wins on 6/8 proteins**. EvolvePro wins on TPMT and PTEN — both have weak
-LLR baselines where the richer 2560D ESM mean embedding outpaces the 1536D
+ESM2 LLR baselines where the richer 2560D ESM mean embedding outpaces the 1536D
 Protenix pair-rep.
 
 ### Per-protein results @ n=800
 
-Effect size = `(mean − LLR_direct) / std`:
+Effect size = `(mean − ESM2 LLR_direct) / std`:
 
-| Protein | Pair-rep PCA 10D ρ | LLR direct ρ | Δ | Effect size | v9 vs EvolvePro |
+| Protein | Pair-rep PCA 10D ρ | ESM2 LLR direct ρ | Δ | Effect size | v9 vs EvolvePro |
 |---------|--------------------|---------------|----|----------|------------------|
 | PTEN_HUMAN | 0.593 | 0.237 | +0.356 | **+6.40σ** | EvolvePro 0.633 |
 | NUD15_HUMAN | 0.782 | 0.689 | +0.093 | +3.35σ | **v9 wins** |
@@ -149,7 +149,7 @@ Effect size = `(mean − LLR_direct) / std`:
 | HSP82_YEAST | 0.634 | 0.586 | +0.048 | +1.24σ | **v9 wins** |
 | AMIE_PSEAE | 0.615 | 0.576 | +0.039 | +1.04σ | **v9 wins** |
 
-Pair-rep PCA 10D **consistently beats LLR baseline on all 8 proteins**
+Pair-rep PCA 10D **consistently beats ESM2 LLR baseline on all 8 proteins**
 (all effect sizes > 0). PTEN_HUMAN shows the largest gain — pair-rep
 "rescues" a protein where ESM-2 alone has essentially no predictive signal.
 
@@ -157,14 +157,14 @@ Pair-rep PCA 10D **consistently beats LLR baseline on all 8 proteins**
 
 ![KKA2 4-panel](results/v9_KKA2_KLEPN/gpr_validation_KKA2_KLEPN.png)
 
-Pair-rep PCA 10D reaches Spearman ρ = 0.713 at n=800 (vs LLR direct = 0.661),
-with 10/10 seeds beating the LLR direct baseline. Best-seed scatter shows
+Pair-rep PCA 10D reaches Spearman ρ = 0.713 at n=800 (vs ESM2 LLR direct = 0.661),
+with 10/10 seeds beating the ESM2 LLR direct baseline. Best-seed scatter shows
 predictions tightly tracking the y=x line.
 
 ### Reference: BLAT_ECOLX (original v9 protocol)
 
 `results/v9_BLAT_reference/` reproduces the original v9 study with the full
-PAE/Protenix feature comparison: GPR(LLR only) / +AF3 conf / +AF3 PAE 8D /
+PAE/Protenix feature comparison: GPR(ESM2 LLR only) / +AF3 conf / +AF3 PAE 8D /
 +Protenix z 10D. Confirms the toolkit reproduces v9 BLAT (Pair-rep ρ = 0.78,
 matching the original protocol's headline number).
 

@@ -22,12 +22,12 @@ from .config import PipelineConfig
 from .gpr import MODEL_NAMES
 
 COLORS = {
-    "GPR(LLR only)":              "#4C72B0",
-    "GPR(LLR + s_mut PCA 5D)":    "#DD8452",
-    "GPR(LLR + z_pair PCA 5D)":   "#55A868",
-    "GPR(LLR + z_pair PCA 10D)":  "#C44E52",
+    "GPR(ESM2 LLR only)":              "#4C72B0",
+    "GPR(ESM2 LLR + s_mut PCA 5D)":    "#DD8452",
+    "GPR(ESM2 LLR + z_pair PCA 5D)":   "#55A868",
+    "GPR(ESM2 LLR + z_pair PCA 10D)":  "#C44E52",
 }
-BEST_MODEL = "GPR(LLR + z_pair PCA 10D)"
+BEST_MODEL = "GPR(ESM2 LLR + z_pair PCA 10D)"
 STD_FLOOR = 1e-3
 
 
@@ -105,7 +105,7 @@ def generate(cfg: PipelineConfig) -> None:
                     fontsize=10, color=COLORS[m], fontweight="bold")
     ax.axhline(llr_direct, color="#B22222", linestyle="--", lw=2.8, alpha=0.95, zorder=4)
     ax.scatter(x, [llr_direct]*len(x), marker="x", color="#B22222", s=80, lw=2.8, zorder=5)
-    ax.text(x[-1]+20, llr_direct+0.003, "LLR direct (no GPR)", fontsize=10.5,
+    ax.text(x[-1]+20, llr_direct+0.003, "ESM2 LLR direct (no GPR)", fontsize=10.5,
             color="#B22222", va="bottom", fontweight="bold")
     ax.set_xlabel("Sample size (80% train / 20% test)", fontsize=12)
     ax.set_ylabel("Spearman ρ", fontsize=12)
@@ -132,8 +132,8 @@ def generate(cfg: PipelineConfig) -> None:
                     va="bottom", fontsize=8.5, color=COLORS[m], fontweight="bold")
     ax.axhline(y=5, color="#C0392B", linestyle="--", lw=1.8, alpha=0.8, label="50% threshold")
     ax.set_xlabel("Sample size", fontsize=12)
-    ax.set_ylabel("Seeds beating LLR direct (out of 10)", fontsize=12)
-    ax.set_title(f"Win Rate vs LLR Direct Baseline (ρ > {llr_direct:.3f})",
+    ax.set_ylabel("Seeds beating ESM2 LLR direct (out of 10)", fontsize=12)
+    ax.set_title(f"Win Rate vs ESM2 LLR Direct Baseline (ρ > {llr_direct:.3f})",
                  fontsize=12, fontweight="bold")
     ax.set_xticks(x_pos); ax.set_xticklabels([str(s) for s in sample_sizes])
     ax.set_ylim(0, 12); ax.set_yticks(range(0, 11, 2))
@@ -174,18 +174,18 @@ def generate(cfg: PipelineConfig) -> None:
         ax.annotate(f"med={med:.3f}", xy=(i+1, med), xytext=(0,-18), textcoords="offset points",
                     ha="center", fontsize=9, color=COLORS[m], fontweight="bold")
     ax.axhline(y=llr_direct, color="#B22222", linestyle="--", lw=2.5, alpha=0.9, zorder=4)
-    ax.text(positions[-1]+0.55, llr_direct+0.002, "LLR direct", fontsize=10,
+    ax.text(positions[-1]+0.55, llr_direct+0.002, "ESM2 LLR direct", fontsize=10,
             color="#B22222", va="bottom", fontweight="bold")
     ax.set_xticks(positions)
-    ax.set_xticklabels(["GPR(LLR only)", "GPR(LLR+\ns_mut PCA 5D)",
-                        "GPR(LLR+\nz_pair PCA 5D)", "GPR(LLR+\nz_pair PCA 10D)"], fontsize=9)
+    ax.set_xticklabels(["GPR(ESM2 LLR only)", "GPR(ESM2 LLR+\ns_mut PCA 5D)",
+                        "GPR(ESM2 LLR+\nz_pair PCA 5D)", "GPR(ESM2 LLR+\nz_pair PCA 10D)"], fontsize=9)
     ax.set_ylabel("Spearman ρ", fontsize=12)
     ax.set_title(f"Model Distribution @ {max(sample_sizes)} Samples ({cfg.n_seeds} seeds)",
                  fontsize=14, fontweight="bold")
 
     fig.suptitle(f"GPR v9 Strategy: Protenix Pair-Rep — {cfg.protein}\n"
                  f"active-site ±{cfg.window} residues · {N} mutations · "
-                 f"{cfg.n_seeds} seeds · LLR direct ρ={llr_direct:.4f}",
+                 f"{cfg.n_seeds} seeds · ESM2 LLR direct ρ={llr_direct:.4f}",
                  fontsize=13, fontweight="bold")
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     out = cfg.figures_dir / f"gpr_validation_{cfg.protein}.png"
@@ -213,10 +213,10 @@ def generate(cfg: PipelineConfig) -> None:
         if np.isfinite(eff[-1]):
             axB.annotate(f"{eff[-1]:+.2f}", (x[-1], eff[-1]), textcoords="offset points",
                          xytext=(8,0), fontsize=10, color=COLORS[m], fontweight="bold")
-    axB.axhline(y=0, color="#888", linestyle="--", lw=1.5, alpha=0.7, label="= LLR direct")
+    axB.axhline(y=0, color="#888", linestyle="--", lw=1.5, alpha=0.7, label="= ESM2 LLR direct")
     axB.axhline(y=2, color="#C44E52", linestyle=":", lw=1.5, alpha=0.7, label="strong effect (2σ)")
-    axB.set_xlabel("Sample size"); axB.set_ylabel("Effect size (mean − LLR_direct) / std")
-    axB.set_title("Effect Size vs LLR Direct\n(>0 beats baseline; >2 = strong)", fontsize=13, fontweight="bold")
+    axB.set_xlabel("Sample size"); axB.set_ylabel("Effect size (mean − ESM2 LLR_direct) / std")
+    axB.set_title("Effect Size vs ESM2 LLR Direct\n(>0 beats baseline; >2 = strong)", fontsize=13, fontweight="bold")
     axB.set_xticks(x); axB.legend(framealpha=0.9, fontsize=8, loc="best")
     # C: SNR
     all_snr = []
@@ -236,7 +236,7 @@ def generate(cfg: PipelineConfig) -> None:
 
     fig2.suptitle(f"Variance & Quality Analysis — {cfg.protein}\n"
                   f"active-site ±{cfg.window} residues · {N} mutations · "
-                  f"{cfg.n_seeds} seeds · LLR direct ρ={llr_direct:.4f}",
+                  f"{cfg.n_seeds} seeds · ESM2 LLR direct ρ={llr_direct:.4f}",
                   fontsize=13, fontweight="bold")
     plt.tight_layout(rect=[0, 0, 1, 0.93])
     out2 = cfg.figures_dir / f"gpr_std_{cfg.protein}.png"

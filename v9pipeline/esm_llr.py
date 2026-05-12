@@ -22,7 +22,7 @@ def _parse_mutation(mut_str: str):
 
 
 def _compute_llr(wt_seq: str, muts_df: pd.DataFrame, model_name: str, layer: int, device) -> dict:
-    """Single WT forward pass → per-position log-probs → LLR for each mutation."""
+    """Single WT forward pass → per-position log-probs → ESM2 LLR for each mutation."""
     import esm
 
     model, alphabet = getattr(esm.pretrained, model_name)()
@@ -103,7 +103,7 @@ def compute_features(cfg: PipelineConfig) -> dict:
     llrs = np.array([ft["llr"] for ft in features])
     dms  = np.array([ft["dms_score"] for ft in features])
     rho, _ = spearmanr(llrs, dms)
-    print(f"LLR direct Spearman ρ (all mutations) = {rho:.4f}")
+    print(f"ESM2 LLR direct Spearman ρ (all mutations) = {rho:.4f}")
 
     meta = {"llr_direct_full": float(rho), "wt_seq": wt_seq,
             "protein": cfg.protein, "n_mutations": len(features)}

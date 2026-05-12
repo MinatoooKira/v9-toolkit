@@ -7,7 +7,7 @@ between iterations.
 
 ### ESM-2 LLR (Step 1)
 - Single WT forward pass with `esm2_t36_3B_UR50D` (layer 36).
-- Per-position log probabilities → `LLR(A→B at pos i) = log P(B|i) − log P(A|i)`.
+- Per-position log probabilities → `ESM2_LLR(A→B at pos i) = log P(B|i) − log P(A|i)`.
 - One scalar per mutation. Captures **single-residue propensity**.
 
 ### Protenix pair-rep (Step 2)
@@ -37,10 +37,10 @@ metric.
 
 | Model | Input | Total dims |
 |---|---|---|
-| GPR(LLR only) | LLR | 1 |
-| GPR(LLR + s_mut PCA 5D) | LLR + PCA(s_mut 384D → 5D) | 6 |
-| GPR(LLR + z_pair PCA 5D) | LLR + PCA(z 1536D → 5D) | 6 |
-| GPR(LLR + z_pair PCA 10D) ★ | LLR + PCA(z 1536D → 10D) | 11 |
+| GPR(ESM2 LLR only) | LLR | 1 |
+| GPR(ESM2 LLR + s_mut PCA 5D) | LLR + PCA(s_mut 384D → 5D) | 6 |
+| GPR(ESM2 LLR + z_pair PCA 5D) | LLR + PCA(z 1536D → 5D) | 6 |
+| GPR(ESM2 LLR + z_pair PCA 10D) ★ | LLR + PCA(z 1536D → 10D) | 11 |
 
 PCA is fit on the **filtered subset only**, then applied. Fitting on the full
 unfiltered set would mix in noise from non-functional residues.
@@ -78,7 +78,7 @@ training sets are small (n=100 with 11 features is borderline).
 After PCA, the principal components have decreasing variance (by definition).
 GPR uses Euclidean distance in the input space — without scaling, PC1 would
 dominate. `StandardScaler` standardizes each dim to mean=0, std=1, **equalizing
-the influence of each PC and LLR**. This is a deliberate choice: we want the
+the influence of each PC and ESM2 LLR**. This is a deliberate choice: we want the
 GPR kernel to weight features by **predictive relevance** (learned via the
 posterior), not by **input variance** (PC ordering).
 
@@ -111,9 +111,9 @@ groupby / faceted plotting.
 
 ## Failure modes
 
-1. **Weak LLR baseline** (ρ < 0.25):
+1. **Weak ESM2 LLR baseline** (ρ < 0.25):
    - For some proteins ESM-2 just doesn't capture DMS well.
-   - Pair-rep can still rescue: PTEN has LLR ρ=0.24 but Pair-rep PCA 10D ρ=0.59.
+   - Pair-rep can still rescue: PTEN has ESM2 LLR ρ=0.24 but Pair-rep PCA 10D ρ=0.59.
    - When neither ESM nor pair-rep show signal → CALM1-style failure.
 
 2. **Active sites cover >50% of protein** (e.g. CALM1 with 6 sites spread

@@ -1,10 +1,10 @@
 """Step 3: GPR validation — 4 models on active-site-proximal subset.
 
 Models (all use Matérn(nu=2.5) + WhiteKernel; same hyperparameters across):
-  1. GPR(LLR only)              — 1D
-  2. GPR(LLR + s_mut PCA 5D)    — 6D
-  3. GPR(LLR + z_pair PCA 5D)   — 6D
-  4. GPR(LLR + z_pair PCA 10D)  — 11D  (v9-strict, "Pair-rep PCA 10D" in original paper)
+  1. GPR(ESM2 LLR only)              — 1D
+  2. GPR(ESM2 LLR + s_mut PCA 5D)    — 6D
+  3. GPR(ESM2 LLR + z_pair PCA 5D)   — 6D
+  4. GPR(ESM2 LLR + z_pair PCA 10D)  — 11D  (v9-strict, "Pair-rep PCA 10D" in original paper)
 
 For each (sample_size, seed):
   - Random subsample of size N
@@ -34,10 +34,10 @@ from .config import PipelineConfig
 warnings.filterwarnings("ignore")
 
 MODEL_NAMES = [
-    "GPR(LLR only)",
-    "GPR(LLR + s_mut PCA 5D)",
-    "GPR(LLR + z_pair PCA 5D)",
-    "GPR(LLR + z_pair PCA 10D)",
+    "GPR(ESM2 LLR only)",
+    "GPR(ESM2 LLR + s_mut PCA 5D)",
+    "GPR(ESM2 LLR + z_pair PCA 5D)",
+    "GPR(ESM2 LLR + z_pair PCA 10D)",
 ]
 
 
@@ -50,10 +50,10 @@ def _run_one_seed(X_llr, X_smut, X_zpair, X_full, y, sample_size, seed, train_ra
     tr, te = idx[perm[:n_tr]], idx[perm[n_tr:]]
 
     configs = [
-        ("GPR(LLR only)",              X_llr[tr],   X_llr[te]),
-        ("GPR(LLR + s_mut PCA 5D)",    X_smut[tr],  X_smut[te]),
-        ("GPR(LLR + z_pair PCA 5D)",   X_zpair[tr], X_zpair[te]),
-        ("GPR(LLR + z_pair PCA 10D)",  X_full[tr],  X_full[te]),
+        ("GPR(ESM2 LLR only)",              X_llr[tr],   X_llr[te]),
+        ("GPR(ESM2 LLR + s_mut PCA 5D)",    X_smut[tr],  X_smut[te]),
+        ("GPR(ESM2 LLR + z_pair PCA 5D)",   X_zpair[tr], X_zpair[te]),
+        ("GPR(ESM2 LLR + z_pair PCA 10D)",  X_full[tr],  X_full[te]),
     ]
     results = {}
     for name, Xtr, Xte in configs:
@@ -124,7 +124,7 @@ def validate(cfg: PipelineConfig) -> dict:
     X_full  = np.hstack([X_llr, pca_zonly.transform(z_pair_raw)])
 
     llr_direct, _ = spearmanr(X_llr.ravel(), y)
-    print(f"LLR direct Spearman ρ (filtered subset) = {llr_direct:.4f}")
+    print(f"ESM2 LLR direct Spearman ρ (filtered subset) = {llr_direct:.4f}")
 
     # 4 × 10 × 4 = 160 fits
     rows = []

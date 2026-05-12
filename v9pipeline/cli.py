@@ -1,7 +1,7 @@
 """Command-line interface for v9 pipeline.
 
 Usage:
-    v9 prep      --config my.yaml      # Step 1: ESM LLR
+    v9 prep      --config my.yaml      # Step 1: ESM2 LLR
     v9 extract   --config my.yaml      # Step 2: Protenix pair-rep
     v9 validate  --config my.yaml      # Step 3: GPR + figures
     v9 plot      --config my.yaml      # regenerate figures from existing CSV
