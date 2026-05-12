@@ -250,7 +250,11 @@ performance" — official EvolvePro on its own iterative protocol scores
 higher. What this table isolates is *which feature representation carries
 more usable signal under v9's evaluation harness*.
 
-![v9 vs EvolvePro-style](results/v9_vs_evolvepro/v9_vs_evolvepro_bar.png)
+![v9 vs EvolvePro-style — bar chart](results/v9_vs_evolvepro/v9_vs_evolvepro_bar.png)
+
+Per-protein learning curves (Spearman ρ vs training sample size):
+
+![v9 vs EvolvePro-style — per-protein curves](results/v9_vs_evolvepro/v9_vs_evolvepro_per_protein.png)
 
 **Under this harness, v9's features win on 6/8 proteins.** EvolvePro-style
 features win on TPMT and PTEN — both have weak ESM2 LLR baselines where the
