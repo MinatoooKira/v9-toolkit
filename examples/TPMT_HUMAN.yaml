@@ -1,0 +1,20 @@
+# v9-toolkit config: TPMT_HUMAN (thiopurine S-methyltransferase)
+# SAM-binding pocket + substrate-channel residues.
+# DMS: Matreyek et al. 2018
+
+protein: TPMT_HUMAN
+dms_csv: ./data/proteingym_subset/TPMT_HUMAN_Matreyek_2018.csv
+active_sites_1idx: [29, 33, 39, 78, 152, 240]      # W29,W33,F39,W78,R152,Y240
+output_dir: ./output/TPMT_HUMAN
+
+window: 10
+sample_sizes: [100, 200, 400, 800]
+n_seeds: 10
+train_ratio: 0.80
+
+esm_model: esm2_t36_3B_UR50D
+esm_layer: 36
+truncate_seq_to: null
+
+protenix_n_cycle: 4
+protenix_dtype: bf16

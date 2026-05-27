@@ -1,0 +1,20 @@
+# v9-toolkit config: KKA2_KLEPN (Klebsiella pneumoniae APH(3')-IIa kinase)
+# Aminoglycoside-resistance kinase: P-loop, hinge, catalytic, Mg2+ coordination.
+# DMS: Melnikov et al. 2014
+
+protein: KKA2_KLEPN
+dms_csv: ./data/proteingym_subset/KKA2_KLEPN_Melnikov_2014.csv
+active_sites_1idx: [28, 95, 160, 190, 208, 261]    # K28(P-loop),F95(hinge),E160,D190(cat),D208(Mg2+),E261
+output_dir: ./output/KKA2_KLEPN
+
+window: 10
+sample_sizes: [100, 200, 400, 800]
+n_seeds: 10
+train_ratio: 0.80
+
+esm_model: esm2_t36_3B_UR50D
+esm_layer: 36
+truncate_seq_to: null
+
+protenix_n_cycle: 4
+protenix_dtype: bf16

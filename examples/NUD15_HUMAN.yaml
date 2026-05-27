@@ -1,0 +1,20 @@
+# v9-toolkit config: NUD15_HUMAN (NUDT15 nudix hydrolase)
+# Substrate binding + Nudix-box catalytic glutamates.
+# DMS: Suiter et al. 2020 — pharmacogenomic variant scan
+
+protein: NUD15_HUMAN
+dms_csv: ./data/proteingym_subset/NUD15_HUMAN_Suiter_2020.csv
+active_sites_1idx: [11, 18, 20, 69, 86, 89]        # R11,V18,K20(sub),E69(cat),E86,E89(Nudix)
+output_dir: ./output/NUD15_HUMAN
+
+window: 10
+sample_sizes: [100, 200, 400, 800]
+n_seeds: 10
+train_ratio: 0.80
+
+esm_model: esm2_t36_3B_UR50D
+esm_layer: 36
+truncate_seq_to: null
+
+protenix_n_cycle: 4
+protenix_dtype: bf16

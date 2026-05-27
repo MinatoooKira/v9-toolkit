@@ -1,0 +1,20 @@
+# v9-toolkit config: P53_HUMAN (tumor suppressor p53)
+# DNA-binding domain cancer hotspot residues.
+# DMS: Giacomelli et al. 2018 — Null Etoposide screen
+
+protein: P53_HUMAN
+dms_csv: ./data/proteingym_subset/P53_HUMAN_Giacomelli_2018_Null_Etoposide.csv
+active_sites_1idx: [175, 245, 248, 249, 273, 282]  # R175,G245,R248,R249,R273,R282
+output_dir: ./output/P53_HUMAN
+
+window: 10
+sample_sizes: [100, 200, 400, 800]
+n_seeds: 10
+train_ratio: 0.80
+
+esm_model: esm2_t36_3B_UR50D
+esm_layer: 36
+truncate_seq_to: null
+
+protenix_n_cycle: 4
+protenix_dtype: bf16

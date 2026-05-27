@@ -1,0 +1,20 @@
+# v9-toolkit config: HSP82_YEAST (Saccharomyces cerevisiae Hsp90)
+# N-terminal ATPase domain key residues.
+# DMS: Mishra et al. 2016
+
+protein: HSP82_YEAST
+dms_csv: ./data/proteingym_subset/HSP82_YEAST_Mishra_2016.csv
+active_sites_1idx: [40, 47, 51, 79, 94, 171]       # D40(Mg2+),E47,N51,D79,G94(lid),T171
+output_dir: ./output/HSP82_YEAST
+
+window: 10
+sample_sizes: [100, 200, 400, 800]
+n_seeds: 10
+train_ratio: 0.80
+
+esm_model: esm2_t36_3B_UR50D
+esm_layer: 36
+truncate_seq_to: null
+
+protenix_n_cycle: 4
+protenix_dtype: bf16

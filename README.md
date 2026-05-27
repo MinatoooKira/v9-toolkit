@@ -304,6 +304,28 @@ protocol used and what the validation in `results/` was run with.
 Real-world users with small datasets or uncharted active-site regions
 should widen or disable the filter to keep enough training data.
 
+### Validation-set active sites
+
+All active sites used in `results/` are literature-derived
+functional/catalytic residues. Each protein ships as a ready-to-run YAML
+in [`examples/`](examples/):
+
+| Protein | Active sites (1-idx) | Functional role | Config |
+|---------|----------------------|-----------------|--------|
+| PTEN_HUMAN  | 92, 93, 124, 128, 130, 138       | Phosphatase active site (D92, H93, C124, K128, R130, Y138) | [`PTEN_HUMAN.yaml`](examples/PTEN_HUMAN.yaml) |
+| NUD15_HUMAN | 11, 18, 20, 69, 86, 89           | Substrate binding (R11, V18, K20) + Nudix-box catalytic (E69, E86, E89) | [`NUD15_HUMAN.yaml`](examples/NUD15_HUMAN.yaml) |
+| KKA2_KLEPN  | 28, 95, 160, 190, 208, 261       | APH(3′)-IIa kinase: K28 P-loop, F95 hinge, E160, D190 cat, D208 Mg²⁺, E261 | [`KKA2_KLEPN.yaml`](examples/KKA2_KLEPN.yaml) |
+| P53_HUMAN   | 175, 245, 248, 249, 273, 282     | DNA-binding domain cancer hotspots (R175, G245, R248, R249, R273, R282) | [`P53_HUMAN.yaml`](examples/P53_HUMAN.yaml) |
+| TPMT_HUMAN  | 29, 33, 39, 78, 152, 240         | SAM-binding pocket + substrate channel (W29, W33, F39, W78, R152, Y240) | [`TPMT_HUMAN.yaml`](examples/TPMT_HUMAN.yaml) |
+| DYR_ECOLI   | 27, 31, 35, 54, 94, 113          | DHFR catalytic + cofactor binding (D27, F31, T35, L54, I94, T113) | [`DYR_ECOLI.yaml`](examples/DYR_ECOLI.yaml) |
+| HSP82_YEAST | 40, 47, 51, 79, 94, 171          | Hsp90 N-terminal ATPase: D40 Mg²⁺, E47, N51, D79, G94 lid, T171 | [`HSP82_YEAST.yaml`](examples/HSP82_YEAST.yaml) |
+| AMIE_PSEAE  | 59, 134, 159, 169, 191, 194      | Amidase Ser-Ser-Lys triad + substrate contacts (E59, K134, S159, S169, D191, Y194) | [`AMIE_PSEAE.yaml`](examples/AMIE_PSEAE.yaml) |
+| BLAT_ECOLX *(reference)* | 70, 73, 130, 166, 234, 237 | Class A β-lactamase: S70 cat, K73, S130, E166 ω-loop, K234, G237 | [`BLAT_ECOLX.yaml`](examples/BLAT_ECOLX.yaml) |
+
+6 active-site residues per protein is the v9 convention — sets the
+pair-rep dimension to a fixed 1536D (6 sites × 128D × 2 directions).
+Different counts work but change the pre-PCA feature dim.
+
 ## Validation results
 
 The numbers below are from **Mode A** (ablation grid). They quantify how

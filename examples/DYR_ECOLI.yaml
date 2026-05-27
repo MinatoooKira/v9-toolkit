@@ -1,0 +1,20 @@
+# v9-toolkit config: DYR_ECOLI (E. coli dihydrofolate reductase, DHFR)
+# Catalytic + cofactor binding residues.
+# DMS: Thompson et al. 2019
+
+protein: DYR_ECOLI
+dms_csv: ./data/proteingym_subset/DYR_ECOLI_Thompson_2019.csv
+active_sites_1idx: [27, 31, 35, 54, 94, 113]       # D27,F31,T35,L54,I94,T113
+output_dir: ./output/DYR_ECOLI
+
+window: 10
+sample_sizes: [100, 200, 400, 800]
+n_seeds: 10
+train_ratio: 0.80
+
+esm_model: esm2_t36_3B_UR50D
+esm_layer: 36
+truncate_seq_to: null
+
+protenix_n_cycle: 4
+protenix_dtype: bf16

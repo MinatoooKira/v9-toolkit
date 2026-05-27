@@ -1,0 +1,21 @@
+# v9-toolkit config: BLAT_ECOLX (TEM-1 β-lactamase, E. coli)
+# Class A serine β-lactamase: catalytic + omega-loop + substrate-binding residues.
+# This is the original v9 reference protein.
+# DMS: Stiffler et al. 2015
+
+protein: BLAT_ECOLX
+dms_csv: ./data/proteingym_subset/BLAT_ECOLX_Stiffler_2015.csv
+active_sites_1idx: [70, 73, 130, 166, 234, 237]    # S70(cat),K73,S130,E166(ω-loop),K234,G237
+output_dir: ./output/BLAT_ECOLX
+
+window: 10
+sample_sizes: [100, 200, 400, 800]
+n_seeds: 10
+train_ratio: 0.80
+
+esm_model: esm2_t36_3B_UR50D
+esm_layer: 36
+truncate_seq_to: null
+
+protenix_n_cycle: 4
+protenix_dtype: bf16

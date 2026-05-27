@@ -1,0 +1,20 @@
+# v9-toolkit config: AMIE_PSEAE (Pseudomonas aeruginosa aliphatic amidase)
+# Amidase Ser-Ser-Lys catalytic triad + key substrate contacts.
+# DMS: Wrenbeck et al. 2017 (deep functional scan)
+
+protein: AMIE_PSEAE
+dms_csv: ./data/proteingym_subset/AMIE_PSEAE_Wrenbeck_2017.csv
+active_sites_1idx: [59, 134, 159, 169, 191, 194]   # E59,K134,S159,S169,D191,Y194
+output_dir: ./output/AMIE_PSEAE
+
+window: 10                                # ±10 around active sites; null to disable
+sample_sizes: [100, 200, 400, 800]
+n_seeds: 10
+train_ratio: 0.80
+
+esm_model: esm2_t36_3B_UR50D
+esm_layer: 36
+truncate_seq_to: null
+
+protenix_n_cycle: 4
+protenix_dtype: bf16
