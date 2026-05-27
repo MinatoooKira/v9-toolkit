@@ -92,13 +92,17 @@ def validate(cfg: PipelineConfig) -> dict:
     pr_order = [name_to_idx[n] for n in names]
     pair_rep = pair_rep[pr_order]
 
-    # Active-site filter
+    # Active-site proximity filter (optional — `window: null` in YAML disables it)
     sites = cfg.active_sites_1idx
-    def near_active(n):
-        pos = int(n[1:-1])
-        return any(abs(pos - s) <= cfg.window for s in sites)
-    mask = np.array([near_active(n) for n in names])
-    print(f"Active-site filter (WINDOW={cfg.window}): {mask.sum()} / {len(names)} mutations")
+    if cfg.window is not None:
+        def near_active(n):
+            pos = int(n[1:-1])
+            return any(abs(pos - s) <= cfg.window for s in sites)
+        mask = np.array([near_active(n) for n in names])
+        print(f"Active-site filter (WINDOW={cfg.window}): {mask.sum()} / {len(names)} mutations")
+    else:
+        mask = np.ones(len(names), dtype=bool)
+        print(f"Active-site filter: DISABLED (window=null) — using all {len(names)} mutations")
 
     feats = [feats[i] for i, m in enumerate(mask) if m]
     names = [names[i] for i, m in enumerate(mask) if m]

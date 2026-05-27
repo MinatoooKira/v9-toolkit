@@ -33,7 +33,7 @@ class PipelineConfig:
     output_dir: str
 
     # Optional with defaults
-    window: int = 10
+    window: Optional[int] = 10        # None / null → disable active-site proximity filter (use all mutations)
     sample_sizes: List[int] = field(default_factory=lambda: [100, 200, 400, 800])
     n_seeds: int = 10
     train_ratio: float = 0.80

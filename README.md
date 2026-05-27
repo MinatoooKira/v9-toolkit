@@ -34,12 +34,14 @@ the v9 validation on their own protein**:
 The repo and validation use ProteinGym DMS datasets (thousands of
 mutations measured at once) because they're the cleanest public
 benchmark. **Your own usage doesn't require DMS-scale data.** A few
-hundred measured single-point mutations from your own wet lab are enough
-— the active-site `WINDOW=10` filter further focuses training to
-~100–1000 functionally-relevant points, well inside GPR's data-efficient
-regime. The fitness value can be anything you measure (kcat,
-fluorescence, binding affinity, growth rate, …); the input format is
-just `mutant, score`.
+hundred measured single-point mutations from your own wet lab are enough.
+The active-site proximity filter (default `window: 10`) further focuses
+training to ~100–1000 functionally-relevant points — well inside GPR's
+data-efficient regime; the filter can be widened or **disabled entirely**
+(`window: null`) for datasets where no obvious focusing region exists.
+The fitness value can be anything you measure (kcat, fluorescence,
+binding affinity, growth rate, …); the input format is just
+`mutant, score`.
 
 ### Roadmap: combination mutations + active learning
 
@@ -254,7 +256,7 @@ dms_csv: ./data/PTEN_HUMAN_Matreyek_2021.csv
 active_sites_1idx: [92, 93, 124, 128, 130, 138]
 output_dir: ./output/PTEN_HUMAN
 
-window: 10
+window: 10                    # ±10 around active sites; set to null to disable filter
 sample_sizes: [100, 200, 400, 800]
 n_seeds: 10
 train_ratio: 0.80
@@ -279,14 +281,28 @@ output/PTEN_HUMAN/
     └── gpr_std_PTEN_HUMAN.png          # 3-panel variance/quality
 ```
 
-## Why active-site WINDOW=10?
+## Active-site proximity filter (optional)
 
-For each mutation `X{pos}Y`, keep only mutations within ±10 residues of any
-active site. This focuses GPR training on the functionally-coupled subset
-where Protenix pair-rep carries the strongest signal.
+For each mutation `X{pos}Y`, keep only mutations within ±`window` residues
+of any active site. This focuses GPR training on the functionally-coupled
+subset where Protenix pair-rep carries the strongest signal.
 
-WINDOW=10 was set by the original v9 BLAT protocol; configurable per protein
-via the `window` field.
+| `window:` value | Behavior |
+|-----------------|----------|
+| `10` (default)  | v9 protocol — strict ±10 around active sites |
+| any int (e.g. `20`, `30`) | Loose filter — recommended for small wet-lab datasets |
+| `null`          | **Filter disabled** — train on all mutations |
+
+`active_sites_1idx` is still required even when the filter is disabled —
+Protenix `z_fwd`/`z_rev` use these residues as feature-extraction anchors
+(the 1536D `z_pair` is "mutation-to-active-sites" attention vectors), and
+the trained `scorer.pkl` is tied to the active-site set used at training
+time.
+
+`WINDOW=10` is the default because that's what the original v9 BLAT
+protocol used and what the validation in `results/` was run with.
+Real-world users with small datasets or uncharted active-site regions
+should widen or disable the filter to keep enough training data.
 
 ## Validation results
 

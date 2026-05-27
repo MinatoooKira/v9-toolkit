@@ -84,20 +84,24 @@ def train(cfg: PipelineConfig, hold_out_validation: bool = False,
     pr_order = [name_to_idx[n] for n in names]
     pair_rep = pair_rep[pr_order]
 
-    # Active-site filter
+    # Active-site proximity filter (optional — `window: null` in YAML disables it)
     sites = cfg.active_sites_1idx
-    def near_active(n):
-        pos = int(n[1:-1])
-        return any(abs(pos - s) <= cfg.window for s in sites)
-    mask = np.array([near_active(n) for n in names])
-    print(f"Active-site filter (WINDOW={cfg.window}): {mask.sum()} / {len(names)} mutations")
+    if cfg.window is not None:
+        def near_active(n):
+            pos = int(n[1:-1])
+            return any(abs(pos - s) <= cfg.window for s in sites)
+        mask = np.array([near_active(n) for n in names])
+        print(f"Active-site filter (WINDOW={cfg.window}): {mask.sum()} / {len(names)} mutations")
+    else:
+        mask = np.ones(len(names), dtype=bool)
+        print(f"Active-site filter: DISABLED (window=null) — training on all {len(names)} mutations")
     feats = [feats[i] for i, m in enumerate(mask) if m]
     names = [names[i] for i, m in enumerate(mask) if m]
     y = y_all[mask]; X_llr = X_llr_all[mask]; pair_rep = pair_rep[mask]
     N = len(y)
     if N < 20:
         raise ValueError(f"Only {N} mutations after filter — too few to train a GPR. "
-                         f"Either provide more data or set window=null to disable filter.")
+                         f"Either provide more data, widen window, or set window=null to disable filter.")
 
     # PCA fit on z-only (1536D → 10D)
     z_pair_raw = pair_rep[:, 384:]

@@ -17,9 +17,12 @@ dms_csv: ./data/my_experiment.csv          # mutant + mutated_sequence + DMS_sco
 active_sites_1idx: [47, 53, 100]            # your functional/catalytic residues
 output_dir: ./output/MY_ENZYME
 
-# For small experimental data (< 1000 mutations), keep the filter loose:
-window: 20                                  # ±20 residues around active sites
-                                            # set to a large number (e.g. 9999) to disable filter
+# Active-site proximity filter for training data:
+#   window: 10    → keep only mutations within ±10 residues of any active site (v9 default)
+#   window: 20    → looser filter (recommended for small datasets)
+#   window: null  → DISABLE filter, train on ALL mutations
+# (Note: active_sites_1idx is still required — Protenix pair-rep uses them as feature anchors.)
+window: 20
 
 # These are only used by DMS evaluation mode (`v9 validate`),
 # not by train/score — leave defaults.

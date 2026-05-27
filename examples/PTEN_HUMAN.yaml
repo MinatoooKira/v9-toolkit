@@ -10,7 +10,7 @@ dms_csv: ./data/proteingym_subset/PTEN_HUMAN_Matreyek_2021.csv
 active_sites_1idx: [92, 93, 124, 128, 130, 138]
 output_dir: ./output/PTEN_HUMAN
 
-window: 10
+window: 10                                # ±10 residues around active sites; set to null to disable
 sample_sizes: [100, 200, 400, 800]
 n_seeds: 10
 train_ratio: 0.80
